@@ -25,7 +25,7 @@ from .models import *
 #
 # ------------------------------------------------------------------------------------------------------ #
 
-#Hello Tommy How do I change the port 
+
 """
     Confirm
 """
@@ -38,9 +38,6 @@ class ConfirmForm(forms.Form):
     Alias
 """
 class AliasForm(forms.ModelForm):
-    alternate_id = forms.CharField(required=True)
-    alternate_title = forms.CharField(required=True)
-    comment = forms.CharField(required=False)
 
     class Meta:
         model = Alias
@@ -60,7 +57,7 @@ class AliasDelete(forms.ModelForm):
 class ArrayForm(forms.ModelForm):
     class Meta:
         model = Array
-        exclude = ('product_observational', 'local_identifier')
+        exclude = ('name', 'local_identifier')
 
 
 
@@ -121,11 +118,7 @@ class BundleForm(forms.ModelForm):
 class CitationInformationForm(forms.ModelForm):
 
     description = forms.CharField(required=True)
-    #publication_year = forms.DateField(required=True, input_formats=['%m/%d/%Y','%d/%m/%Y','%Y-%m-%d','%m-%d-%Y','%d-%m-%Y'])
-    publication_year = forms.CharField(required=True) #validators=[RegexValidator(r'^\d{1,10}$')])
-    author_list = forms.CharField(required=False)
-    editor_list = forms.CharField(required=False)
-    keyword = forms.CharField(required=False)
+    publication_year = forms.DateField(required=True, input_formats=['%Y'])
 
     class Meta:
         model = Citation_Information
@@ -139,31 +132,9 @@ class CitationInformationForm(forms.ModelForm):
         pass
 
 
-"""
-Test
-"""
 
 
-"""
-    Modification History 
-"""
-class ModificationHistoryForm(forms.ModelForm):
 
-    description = forms.CharField(required=True)
-    modification_date = forms.CharField(required=True) #validators=[RegexValidator(r'^\d{1,10}$')])
-    version_id = forms.CharField(required=False)
-
-
-    class Meta:
-        model = Modification_History
-        exclude = ('bundle',)
-
-
-    """
-        clean should do nothing to the description.  For publication_year, CitationInformationForm uses Django's DateField form field.  Django's DateField form field (https://docs.djangoproject.com/en/2.0/_modules/django/forms/fields/#DateField) simply sees if the input could be converted to a date time object.  Therefore, values like 6020 can be input.  We need to decide if we want to prevent user errors such as this, raise warnings to the user, do nothing, etc...
-    """
-    def clean(self):
-        pass
 
 
 
@@ -175,11 +146,10 @@ class ModificationHistoryForm(forms.ModelForm):
 class CollectionsForm(forms.ModelForm):
     has_document = forms.BooleanField(required=True, initial=True)
     has_context = forms.BooleanField(required=True, initial=True)
-   # has_xml_schema = forms.BooleanField(required=True, initial=True)
-    has_data = forms.BooleanField(required=False, initial=False)   
-    #has_raw_data = forms.BooleanField(required=False, initial=False)
-    #has_calibrated_data = forms.BooleanField(required=False, initial=False)
-    #has_derived_data = forms.BooleanField(required=False, initial=False)
+    #has_xml_schema = forms.BooleanField(required=True, initial=True)
+    has_raw_data = forms.BooleanField(required=False, initial=False)
+    has_calibrated_data = forms.BooleanField(required=False, initial=False)
+    has_derived_data = forms.BooleanField(required=False, initial=False)
     #data_enum = forms.IntegerField(required=False, min_value = 0, max_value=25)
 
     class Meta:
@@ -190,24 +160,22 @@ class CollectionsForm(forms.ModelForm):
 """
     Data Prep
 """
-"""
 class DataObjectForm(forms.ModelForm):
     class Meta:
 	model = Data_Object
 	fields = ('name', 'data_type')
 	exclude = ('bundle',)
 
-"""
+
 """
     Data Emun
-"""
 """
 class DataEnum(forms.ModelForm):
     class Meta:
 	model = Data
 	exclude = ('bundle','processing_level',)
 
-"""
+
 
 
 
@@ -221,8 +189,8 @@ class DataEnum(forms.ModelForm):
 class DataForm(forms.ModelForm):
     class Meta:
         model = Data
-        exclude = ('bundle',)
-        #exclude = ('bundle','data_enum',)
+        exclude = ('bundle','data_enum',)
+
 
 
 
@@ -429,11 +397,9 @@ class ProductDocumentForm(forms.ModelForm):
 class ProductObservationalForm(forms.ModelForm):
     OBSERVATIONAL_TYPES = [
 
-        ('Array','Array'),
-        ('Table','Table'),
-        #('Table Binary','Table Binary'),
-        #('Table Character','Table Character'),
-        #('Table Delimited','Table Delimited'),
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
     ]
     PURPOSE_TYPES = [
         ('Calibration','Calibration'),
@@ -615,191 +581,7 @@ class Facility(forms.ModelForm):
 '''
 
 
-class ColorDisplaySettingsForm(forms.ModelForm):
-    """
-The blue_channel_band attribute identifies the
-        number of the band, along the band axis, that should be loaded,
-        by default, into the blue channel of a display device. The first
-        band along the band axis has band number 1.
-The color_display_axis attribute identifies, by
-        name, the axis of an Array (or Array subclass) that is intended
-        to be displayed in the color dimension of a display device.
-        I.e., bands from this dimension will be loaded into the red,
-        green, and blue bands of the display device. The value of this
-        attribute must match the value of one, and only one, axis_name
-        attribute in an Axis_Array class of the associated
-        Array.
-The green_channel_band attribute identifies the
-        number of the band, along the band axis, that should be loaded,
-        by default, into the green channel of a display device. The
-        first band along the band axis has band number
-        1.
-The red_channel_band attribute identifies the
-        number of the band, along the band axis, that should be loaded,
-        by default, into the red channel of a display device. The first
-        band along the band axis has band number 1.
-    """
 
-
-
-    class Meta:
-        model = Color_Display_Settings
-        exclude = ('display_dictionary',)
-
-
-
-
-
-class DisplayDirectionForm(forms.ModelForm):
-    """
-The horizontal_display_axis attribute
-        identifies, by name, the axis of an Array (or Array subclass)
-        that is intended to be displayed in the horizontal or "sample"
-        dimension on a display device. The value of this attribute must
-        match the value of one, and only one, axis_name attribute in an
-        Axis_Array class of the associated Array.
-The horizontal_display_direction attribute
-        specifies the direction across the screen of a display device
-        that data along the horizontal axis of an Array is supposed to
-        be displayed.
-The vertical_display_axis attribute identifies,
-        by name, the axis of an Array (or Array subclass) that is
-        intended to be displayed in the vertical or "line" dimension on
-        a display device. The value of this attribute must match the
-        value of one, and only one, axis_name attribute in an Axis_Array
-        class of the associated Array.
-The vertical_display_direction attribute
-        specifies the direction along the screen of a display device
-        that data along the vertical axis of an Array is supposed to be
-        displayed.
-    """
-
-
-
-    class Meta:
-        model = Display_Direction
-        exclude = ('display_dictionary',)
-
-
-
-class DisplaySettingsForm(forms.ModelForm):
-    """
-The frame_rate attribute indicates the number of
-        still pictures (or frames) that should be displayed per unit of
-        time in a video. Note this is NOT necessarily the same as the
-        rate at which the images were acquired.
-The loop_back_and_forth_flag attribute specifies
-        whether or not a movie should only be "looped" or played
-        repeatedly in the forward direction, or whether it should be
-        played forward followed by played in reverse,
-        iteratively.
-The loop_count attribute specifies the number of
-        times a movie should be "looped" or replayed before
-        stopping.
-The loop_delay attribute specifies the amount of
-        time to pause between "loops" or repeated playbacks of a
-        movie.
-The loop_flag attribute specifies whether or not
-        a movie object should be played repeatedly without prompting
-        from the user.
-The time_display_axis attribute identifies, by
-        name, the axis of an Array (or Array subclass), the bands of
-        which are intended to be displayed sequentially in time on a
-        display device. The frame_rate attribute, if present, provides
-        the rate at which these bands are to be
-        displayed.
-    """
-
-
-
-    class Meta:
-        model = Display_Settings
-        exclude = ('display_dictionary',)
-
-
-
-class MovieDisplaySettingsForm(forms.ModelForm):
-    """
-The Movie_Display_Settings class provides
-        default values for the display of a multi-banded Array using a
-        software application capable of displaying video
-        content.
-The frame_rate attribute indicates the number of
-        still pictures (or frames) that should be displayed per unit of
-        time in a video. Note this is NOT necessarily the same as the
-        rate at which the images were acquired.
-The loop_back_and_forth_flag attribute specifies
-        whether or not a movie should only be "looped" or played
-        repeatedly in the forward direction, or whether it should be
-        played forward followed by played in reverse,
-        iteratively.
-The loop_count attribute specifies the number of
-        times a movie should be "looped" or replayed before
-        stopping.
-The loop_delay attribute specifies the amount of
-        time to pause between "loops" or repeated playbacks of a
-        movie.
-The loop_flag attribute specifies whether or not
-        a movie object should be played repeatedly without prompting
-        from the user.
-The time_display_axis attribute identifies, by
-        name, the axis of an Array (or Array subclass), the bands of
-        which are intended to be displayed sequentially in time on a
-        display device. The frame_rate attribute, if present, provides
-        the rate at which these bands are to be
-        displayed.
-    """
-    LOOP_DELAY_UNIT_CHOICES = [
-        ('microseconds','microseconds'),
-        ('ms','milliseconds'),
-        ('s','seconds'),
-        ('min','minute'),
-        ('hr','hour'),
-        ('day','day'),
-        ('julian day','julian day'),
-        ('yr','year'),
-    ]
-    loop_delay_unit = forms.RadioSelect(choices=LOOP_DELAY_UNIT_CHOICES)
-
-    class Meta:
-        model = Movie_Display_Settings
-        exclude = ('display_dictionary',)
-
-
-
-#class DisplayDictionaryForm(forms.ModelForm):
-    """
-    This dictionary describes how to display Array data on a display device
-The Color_Display_Settings class provides
-        guidance to data users on how to display a multi-banded Array
-        object on a color-capable display device.
-The Display_Direction class specifies how two of
-        the dimensions of an Array object should be displayed in the
-        vertical (line) and horizontal (sample) dimensions of a display
-        device.
-The Display_Settings class contains one or more
-        classes describing how data should be displayed on a display
-        device.
-The Movie_Display_Settings class provides
-        default values for the display of a multi-banded Array using a
-        software application capable of displaying video
-        content.
-    """
-
-
-
-#    class Meta:
-#        model = DisplayDictionary
-#        exclude = ('array',)
-
-
-
-"""
-    Confirm
-"""
-class DictionaryForm(forms.Form):
-    CHOICES = [('Display','Display') , ('testing','testing'),]
-    dictionary_type = forms.MultipleChoiceField(choices=CHOICES, widget=forms.CheckboxSelectMultiple())
 
 
 

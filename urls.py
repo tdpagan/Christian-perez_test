@@ -13,10 +13,7 @@ from . import views
 app_name='build'
 urlpatterns = [
     # Alias
-#    url(r'^(?P<pk_bundle>\d+)/alias/$', views.alias, name='alias'),
-    url(r'^(?P<pk_bundle>\d+)/alias_edit/(?P<pk_alias>[-\w]+)/$', views.alias_edit, name='alias_edit'),
-
-    url(r'^(?P<pk_bundle>\d+)/alias_delete/(?P<pk_alias>[-\w]+)/$', views.alias_delete, name='alias_delete'),
+    url(r'^(?P<pk_bundle>\d+)/alias/$', views.alias, name='alias'),
 
     # Alias_Delete
     url(r'^(?P<pk_bundle>\d+)/(?P<alias>[-\w]+)/alias_delete/$', views.alias_delete, name='alias_delete'),
@@ -33,8 +30,7 @@ urlpatterns = [
 
     # Citation_Information
     url(r'^(?P<pk_bundle>\d+)/citation_information/$', views.citation_information, name='citation_information'),
-    # Modification_History
-    url(r'^(?P<pk_bundle>\d+)/modification_story/$', views.modification_history, name='modification_history'),
+
     # Collections
 
 
@@ -55,23 +51,8 @@ urlpatterns = [
 
 
     # Data
-#    url(r'^(?P<pk_bundle>\d+)/data/$', views.data, name='data'),
-    url(r'^(?P<pk_bundle>\d+)/data/(?P<pk_data>\d+)/$', views.data, name='data'),    
+    url(r'^(?P<pk_bundle>\d+)/data/$', views.data, name='data'),
     url(r'^(?P<pk_bundle>\d+)/data/(?P<pk_product_observational>\d+)/$', views.product_observational, name='product_observational'),
-
-    url(
-        r'^(?P<pk_bundle>\d+)/data/(?P<pk_data>\d+)/product_observational/(?P<pk_product_observational>\d+)/array/$',
-        views.array,
-        name='array'
-    ),
-
-
-    url(r'^(?P<pk_bundle>\d+)/data/(?P<pk_data>\d+)/display_dictionary/(?P<pk_display_dictionary>\d+)/$', views.display_dictionary, name='display_dictionary'),
-
-
-
-
-    url(r'^(?P<pk_bundle>\d+)/data/table/(?P<pk_product_observational>\d+)/$', views.table_detail, name='table_detail'),
     url(r'^(?P<pk_bundle>\d+)/(?P<data_object>\d+)/table_creation/$', views.Table_Creation, name='table_creation'),
     url(r'^(?P<pk_bundle>\d+)/(?P<table>[-/w]+)/field_creation/$', views.Field_Creation, name='field_creation'),
 

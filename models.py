@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.http import HttpResponseRedirect
 from django.shortcuts import render, redirect, render_to_response
 from django.urls import reverse
@@ -147,8 +146,6 @@ class Version(models.Model):
 		    new_number = new_number + '14' + "."
 		if number[i] == 'F':
 		    new_number = new_number + '15' + "."
-		if number[i] == 'G':
-		    new_number = new_number + '16' + "." 
 	   i = i + 1
 	'''
         # Add a period after each digit.  Ex: 1234 -> 1.2.3.4.
@@ -171,8 +168,6 @@ class Version(models.Model):
 		    new_number = '{0}{1}{2}'.format(new_number, '14', '.')
 		elif each_digit is 'F':
 		    new_number = '{0}{1}{2}'.format(new_number, '15', '.')
-		elif each_digit is 'G':
-		    new_number = '{0}{1}{2}'.format(new_number. '16', '.')
 	'''
 	print new_number
 
@@ -626,7 +621,6 @@ class Instrument(models.Model):
     def __str__(self):
         return self.name
 '''
-
 
 
 
@@ -1657,14 +1651,10 @@ class Bundle(models.Model):
     )
 
     VERSION_CHOICES = (
-	('1G00', '1G00'),
-	('1F00', '1F00'),
-	('1E00', '1E00'),
 	('1D00', '1D00'),
 	('1C00', '1C00'),
 	('1B10', '1B10'),
 	('1B00', '1B00'),
-	('1A10', '1A10'),
 	('1A00', '1A00'),
 	('1900', '1900'),
 	('1800', '1800'),
@@ -1842,7 +1832,6 @@ class Bundle(models.Model):
         # Components of labels
 #        alias_set = Alias.objects.filter(bundle=self)
         citation_information_set = Alias.objects.filter(bundle=self)
-	modification_history_set = Alias.objects.filter(bundle=self)
         # context_set = Needs to be created still
         # modification_history_set --> Needs to be created still
 
@@ -1853,7 +1842,6 @@ class Bundle(models.Model):
 #        print alias_set
         print citation_information_set
         print document_set
-	print modification_history_set
 #        print data_set
 
 
@@ -1867,11 +1855,10 @@ class Collections(models.Model):
     bundle = models.OneToOneField(Bundle, on_delete=models.CASCADE)
     has_document = models.BooleanField(default=True)
     has_context = models.BooleanField(default=True)
-   # has_xml_schema = models.BooleanField(default=True)
-    has_data = models.BooleanField(default=False)
-    #has_raw_data = models.BooleanField(default=False)
-    #has_calibrated_data = models.BooleanField(default=False)
-    #has_derived_data = models.BooleanField(default=False)
+    #has_xml_schema = models.BooleanField(default=True)
+    has_raw_data = models.BooleanField(default=False)
+    has_calibrated_data = models.BooleanField(default=False)
+    has_derived_data = models.BooleanField(default=False)
     #data_enum = models.PositiveIntegerField(default = 0)
 
 
@@ -1882,10 +1869,15 @@ class Collections(models.Model):
             collections_list.append("document")
         if self.has_context:
             collections_list.append("context")
-       # if self.has_xml_schema:
-         #   collections_list.append("xml_schema")
-        if self.has_data:
-            collections_list.append("data")
+        #if self.has_xml_schema:
+            #collections_list.append("xml_schema")
+        if self.has_raw_data:
+            collections_list.append("data_raw")
+        if self.has_calibrated_data:
+            collections_list.append("data_calibrated")
+        if self.has_derived_data:
+            collections_list.append("data_derived")
+	    #collections_list.append("data_enum")
         return collections_list
 
 
@@ -1893,7 +1885,7 @@ class Collections(models.Model):
     #     Note: When we call on Collections, we want to be able to have a list of all collections 
     #           pertaining to a bundle.
     def __str__(self):
-        return '{0} Bundle has document={1}, context={2}, data={3}'.format(self.bundle, self.has_document, self.has_context, self.has_data)
+        return '{0} Bundle has document={1}, context={2}, raw={3}, calibrated={4}, derived={5}'.format(self.bundle, self.has_document, self.has_context, self.has_raw_data, self.has_calibrated_data, self.has_derived_data)
     class Meta:
         verbose_name_plural = 'Collections'        
 
@@ -1915,6 +1907,7 @@ class Collections(models.Model):
 	collection_directory = os.path.join(self.bundle.directory(), data)
 	make_directory(collection_directory)
 
+"""
 """
 @python_2_unicode_compatible
 class Data(models.Model):
@@ -2023,7 +2016,7 @@ class Data_Object(models.Model):
     
 
 
-"""
+
 
 
 """
@@ -2034,7 +2027,6 @@ Table and Field Objects
 
     -Field Objects belong to Table objects. Their quantity is deterined by the fields atribute of their 
 	parent Table object.
-"""
 """
 @python_2_unicode_compatible
 class Table_Delimited(models.Model):
@@ -2136,7 +2128,7 @@ class Field_Character(models.Model):
         pass
 
 
-"""
+
 
 """
 15.1  Product_Bundle
@@ -2261,9 +2253,6 @@ class Product_Bundle(models.Model):
     """
     def build_internal_reference(self, root, relation):
 
-        print '---DEBUG---'
-        print 'Root: {}'.format(root)
-
         Reference_List = root.find('{}Reference_List'.format(NAMESPACE))
 
         Internal_Reference = etree.SubElement(Reference_List, 'Internal_Reference')
@@ -2277,41 +2266,9 @@ class Product_Bundle(models.Model):
         return root   
 
 
-#    def base_case(self):
-#        return
-
-
-
-
-    def build_bundle_member_entry(self, root, collection):
-        """
-        build_internal_reference builds and fills the Internal_Reference information within the 
-        Reference_List of Product_Bundle.  The relation is used within reference_type to associate what 
-        the bundle is related to, like bundle_to_document.  Therefore, relation is a model object in 
-        ELSA, like Document.  The possible relations as of V1A00 are errata, document, investigation, 
-        instrument, instrument_host, target, resource, associate.
-        """
-        print '---DEBUG---'
-        print 'Root: {}'.format(root)
-
-        
-        Bundle_Member_Entry = etree.SubElement(root, 'Bundle_Member_Entry')
-
-        lid_reference = etree.SubElement(Bundle_Member_Entry, 'lid_reference')
-        lid_reference.text = '{}:{}'.format(self.bundle.lid(), collection.collection.lower())
-
-        member_status = etree.SubElement(Bundle_Member_Entry, 'member_status')
-        member_status.text = 'Primary'
-
-        reference_type = etree.SubElement(Bundle_Member_Entry, 'reference_type')
-        reference_type.text = 'bundle_has_{}_collection'.format(collection.collection.lower())   
-
-        return root   
-
-
-
     def base_case(self):
         return
+
 
 
 
@@ -2379,17 +2336,6 @@ class Product_Collection(models.Model):
 
 #        return "{0}\nProduct Collection for {1} Collection".format(self.collections.bundle, self.collection)
 
-    def lid(self):
-        """Builds lid for collection
-        """
-        if self.collection != 'Data':
-            collection_lid = '{0}:{1}'.format(self.bundle.lid, self.collection.lower())
-        else:
-            collection_lid = '{0}:data_<DATA_TYPE_HERE>'.format(self.bundle.lid)
-        return collection_lid
-
-
-
     """
         This returns the directory path of all collections but the data collection.
         To return any of the data collection directory paths, see directory_data.
@@ -2401,9 +2347,8 @@ class Product_Collection(models.Model):
 
 
     def directory_data(self, data):
-        collection_directory = os.path.join(self.bundle.directory(), data.get_directory_name())
-#Jacob's        name_edit = '{0}_{1}'.format(self.collection.lower(), data.processing_level.lower())
-#        collection_directory = os.path.join(self.bundle.directory(), name_edit)
+        name_edit = '{0}_{1}'.format(self.collection.lower(), data.processing_level.lower())
+        collection_directory = os.path.join(self.bundle.directory(), name_edit)
         return collection_directory
 
     """
@@ -2426,17 +2371,12 @@ class Product_Collection(models.Model):
        label returns the physical label location in ELSAs archive
     """
     def label(self):
-        if self.collection == 'Data':
-            pass                         # Need to fix with new data collection changes
-        else:
-            return os.path.join(self.directory(), self.name_label_case())
+        return os.path.join(self.directory(), self.name_label_case())
 
 
     """
     """
     def build_base_case(self):
-        if self.collection == 'Data':
-            pass
         
         # Locate base case Product_Collection template found in templates/pds4_labels/base_case/
         source_file = os.path.join(PDS4_LABEL_TEMPLATE_DIRECTORY, 'base_case')
@@ -2488,8 +2428,6 @@ class Product_Collection(models.Model):
                   self (like itself).
     """
     def fill_base_case(self, root):
-        if self.collection == 'Data':
-            pass
         Product_Collection = root
          
         # Fill in Identification_Area
@@ -2536,187 +2474,6 @@ class Product_Collection(models.Model):
     def __str__(self):
         
         return "{0}: Product Collection for {1} Collection".format(self.bundle, self.collection)
-
-
-
-
-
-
-"""
-"""
-@python_2_unicode_compatible
-class Data(models.Model):
-    PROCESSING_LEVEL_CHOICES = (            
-        ('Calibrated', 'Calibrated'),
-        ('Derived', 'Derived'),
-        ('Raw', 'Raw'),
-        ('Reduced', 'Reduced'),
-    )
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
-    name = models.CharField(max_length=MAX_CHAR_FIELD)
-    processing_level = models.CharField(max_length=30, choices=PROCESSING_LEVEL_CHOICES, default='Raw',)
-
-
-    class Meta:
-        verbose_name_plural = 'Data'    
-
-
-    def __str__(self):
-        return 'Data associated'  # Better this once we work on data more
-
-
-    # get_directory_name returns the name of the directory for this data object.
-    def get_directory_name(self):
-        # Edit name for directory
-        # replace all spaces with underscores
-        name = replace_all(self.name.lower(), ' ', '_')
-        return 'data_{}_{}'.format(self.processing_level.lower(), name)
-
-
-    # build_directory builds a directory of the form data_<processing_level>.  
-    # Function make_directory(path) can be found in chocolate.py.  It checks the existence
-    # of a directory before creating the directory.
-    def build_directory(self):
-
-        # Add check to see if data directory exists
-        data_directory = os.path.join(self.bundle.directory(),self.get_directory_name())
-
-        if not os.path.exists(data_directory):
-            print 'Creating directory'
-            make_directory(data_directory)
-            return True
-        else:
-            print 'Directory already created'
-            return False
-
-    def build_product_collection(self):
-        print "Building product collection label - base case"
-        p = Product_Collection.objects.get(bundle=self.bundle, collection='Data')
-        p.build_base_case_data(self)
-        
-
-
-    # directory returns the file path associated with the given model.
-    def directory(self):
-        data_directory = os.path.join(self.bundle.directory(), self.get_directory_name())
-        return data_directory  
-
-
-
-
-
-
-
-"""
-Table and Field Objects
-
-    -Table Objects belong to bundle objects. How many tables of what type is determined by the data prep
-	object. The name atribute is also determined by data prep.
-
-    -Field Objects belong to Table objects. Their quantity is deterined by the fields atribute of their 
-	parent Table object.
-"""
-@python_2_unicode_compatible
-class Table_Delimited(models.Model):
-    
-    DELIMITER_CHOICES = (
-	('Comma','Comma'),
-	('Horizontal Tab','Horizontal Tab'),
-	('Semicolon','Semicolon'),
-	('Vertical Bar','Vertical Bar'),
-    )
-
-    name = models.CharField(max_length=256, blank=True)
-    offset = models.IntegerField(default=-1)
-    object_length = models.IntegerField(default=-1)
-    description = models.CharField(max_length=5000, default="unset")
-    records = models.IntegerField(default=-1)
-    field_delimiter = models.CharField(max_length=256, choices=DELIMITER_CHOICES, default="Comma", blank=True)
-    fields = models.IntegerField(default=-1)
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True,)
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE,null=True)
-
-    def __str__(self):
-        return str(self.id)
-
-
-@python_2_unicode_compatible
-class Table_Binary(models.Model):
-    name = models.CharField(max_length=256, blank=True)
-    offset = models.IntegerField(default=-1)
-    records = models.IntegerField(default=-1)
-    fields = models.IntegerField(default=-1)
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True,)
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE, null=True)
-
-    def __str__(self):
-        return str(self.id)
-
-@python_2_unicode_compatible
-class Table_Fixed_Width(models.Model):
-
-    RECORD_CHOICES = (
-	('Sample Choice','Sample Choice'),
-    )
-
-    name = models.CharField(max_length=256, blank=True)
-    offset = models.IntegerField(default=-1)
-    object_length = models.IntegerField(default=-1)
-    description = models.CharField(max_length=5000, default="unset")
-    records = models.IntegerField(default=-1)
-    record_delimiter = models.CharField(max_length=256, choices=RECORD_CHOICES, default="Sample Choice", blank=True)
-    fields = models.IntegerField(default=-1)
-    data = models.ForeignKey(Data, on_delete=models.CASCADE, null=True,)
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE, null=True)
-
-    def __str__(self):
-        return str(self.id)
-
-
-@python_2_unicode_compatible
-class Field_Delimited(models.Model):
-    name = models.CharField(max_length=256)
-    field_number = models.IntegerField()
-    data_type = models.CharField(max_length=256)
-    unit = models.CharField(max_length=256, null=True,)
-    description = models.CharField(max_length=5000)
-    table = models.ForeignKey(Table_Delimited, on_delete=models.CASCADE, null=True,)
-
-    def __str__(self):
-        pass
-
-@python_2_unicode_compatible
-class Field_Binary(models.Model):
-    name = models.CharField(max_length=256)
-    field_number = models.IntegerField()
-    field_location = models.CharField(max_length=256)
-    data_type = models.CharField(max_length=256)
-    field_length = models.IntegerField()
-    unit = models.CharField(max_length=256, null=True,)
-    scaling_factor = models.IntegerField()
-    value_offset = models.IntegerField()
-    description = models.CharField(max_length=5000)
-    table = models.ForeignKey(Table_Binary, on_delete=models.CASCADE, null=True,)
-
-    def __str__(self):
-        pass
-    
-
-@python_2_unicode_compatible
-class Field_Character(models.Model):
-    name = models.CharField(max_length=256)
-    field_number = models.IntegerField()
-    data_type = models.CharField(max_length=256)
-    field_length = models.IntegerField()
-    field_location = models.CharField(max_length=256)
-    description = models.CharField(max_length=5000)
-    table = models.ForeignKey(Table_Fixed_Width, on_delete=models.CASCADE, null=True,)
-
-    def __str__(self):
-        pass
-
-
-
 
 
 
@@ -2782,11 +2539,9 @@ class Product_Observational(models.Model):
     ]
     OBSERVATIONAL_TYPES = [
 
-        ('Table','Table'),
-        ('Array','Array'),
-        #('Table Binary','Table Binary'),
-        #('Table Character','Table Character'),
-        #('Table Delimited','Table Delimited'),
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
     ]
     PROCESSING_LEVEL_TYPES = [
         ('Calibrated','Calibrated'),
@@ -2811,7 +2566,7 @@ class Product_Observational(models.Model):
     processing_level = models.CharField(max_length=MAX_CHAR_FIELD, choices=PROCESSING_LEVEL_TYPES)
     purpose = models.CharField(max_length=MAX_TEXT_FIELD, choices=PURPOSE_TYPES)
     title = models.CharField(max_length=MAX_CHAR_FIELD)
-    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=OBSERVATIONAL_TYPES, default='Table')
+    type_of = models.CharField(max_length=MAX_CHAR_FIELD, choices=OBSERVATIONAL_TYPES, default='Not_Set')
 
 
 
@@ -2844,7 +2599,7 @@ class Product_Observational(models.Model):
     # Label Constructors
     def build_base_case(self):
         
-        # Locate base case Product_Observational template found in templates/pds4_labels/base_case/
+        # Locate base case Product_Collection template found in templates/pds4_labels/base_case/
         source_file = os.path.join(PDS4_LABEL_TEMPLATE_DIRECTORY, 'base_case')
         source_file = os.path.join(source_file, 'product_observational.xml')
 
@@ -2962,31 +2717,8 @@ class Product_Observational(models.Model):
 
         # End
         return Product_Observational
-
-
-    def fill_display_dictionary(self, root):
-        """
-        build_internal_reference builds and fills the Internal_Reference information within the 
-        Reference_List of Product_Bundle.  The relation is used within reference_type to associate what 
-        the bundle is related to, like bundle_to_document.  Therefore, relation is a model object in 
-        ELSA, like Document.  The possible relations as of V1A00 are errata, document, investigation, 
-        instrument, instrument_host, target, resource, associate.
-        """
-        print '---DEBUG---'
-        print 'Root: {}'.format(root)
-
-
-        # Change the xml-model processing instruction  --- Needs a fix
-        text = 'href=https://pds.nasa.gov/pds4/disp/v1/PDS4_DISP_1B00.sch'
-
-        root.addprevious(etree.ProcessingInstruction('xml-model', text=text))
-        print 'Tree: {}'.format(etree.tostring(root))
-
-
-        return root
         
     """
-        Returns the title of the observational product
     """
     # Meta
     def __str__(self):
@@ -3142,9 +2874,7 @@ class Product_Document(models.Model):
         Identification_Area = Product_Document.find('{}Identification_Area'.format(NAMESPACE))
 
         logical_identifier = Identification_Area.find('{}logical_identifier'.format(NAMESPACE))
-        logical_identifier.text =  self.lid()
-#Jacob's version going to need to verify if its better
-#        logical_identifier.text =  'urn:{0}:{1}:{2}:{3}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case(), 'document', self.document_name) # where agency is something like nasa:pds
+        logical_identifier.text =  'urn:{0}:{1}:{2}:{3}'.format(self.bundle.user.userprofile.agency, self.bundle.name_lid_case(), 'document', self.document_name) # where agency is something like nasa:pds
 
         version_id = Identification_Area.find('{}version_id'.format(NAMESPACE))
         version_id.text = '1.0'  # Can make this better
@@ -3188,6 +2918,7 @@ class Product_Document(models.Model):
         if self.description:
             description = etree.SubElement(Document, 'description')
             description.text = self.description     
+
         return root        
 
 
@@ -3364,10 +3095,10 @@ Referenced from	Identification_Area
 class Citation_Information(models.Model):
 
     bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
-    author_list = models.CharField(max_length=MAX_CHAR_FIELD, blank=True)
-    description = models.CharField(max_length=MAX_TEXT_FIELD)
-    editor_list = models.CharField(max_length=MAX_CHAR_FIELD, blank=True)
-    keyword = models.CharField(max_length=MAX_CHAR_FIELD, blank=True)
+    author_list = models.CharField(max_length=MAX_CHAR_FIELD)
+    description = models.CharField(max_length=MAX_CHAR_FIELD)
+    editor_list = models.CharField(max_length=MAX_CHAR_FIELD)
+    keyword = models.CharField(max_length=MAX_CHAR_FIELD)
     publication_year = models.CharField(max_length=MAX_CHAR_FIELD)
     
     # Builders
@@ -3406,43 +3137,6 @@ class Citation_Information(models.Model):
 
 
 
-class Modification_History(models.Model):
-
-    bundle = models.ForeignKey(Bundle, on_delete=models.CASCADE)
-    
-    description = models.CharField(max_length=MAX_TEXT_FIELD)
-    
-    version_id = models.CharField(max_length=MAX_CHAR_FIELD, blank=True)
-    modification_date = models.CharField(max_length=MAX_CHAR_FIELD)
-    
-    # Builders
-    def build_modification_history(self, label_root):
-        
-         
-        # Find Identification_Area
-        Identification_Area = label_root.find('{}Identification_Area'.format(NAMESPACE))
-
-        # Find Alias_List.  If no Alias_List is found, make one.
-        Modification_History = Identification_Area.find('{}Modification_History'.format(NAMESPACE))
-
-        # Double check but I'm pretty sure Modification_History is only added once.  
-        #if Modification_History is None:
-        Modification_History = etree.SubElement(Identification_Area, 'Modification_History')
-
-        # Add Modification_History information
-        if self.version_id:
-            version_id = etree.SubElement(Modification_History, 'version_id')  
-            version_id.text = self.version_id
-	
-        description = etree.SubElement(Modification_History, 'description')
-        description.text = self.description
-        modification_date = etree.SubElement(Modification_History, 'modification_date')
-        modification_date.text = self.modification_date
-        return label_root
-
-    # Meta
-    def __str__(self):
-        return 'Need to finish this.'
 
 
 
@@ -3480,121 +3174,26 @@ class Table(models.Model):
 
 
 """
-    The Array model object defines a homogeneous N-dimensional array of scalars. The Array class is the parent class for all n-dimensional arrays of scalars.
+    The Array model object needs more work.
 """
 @python_2_unicode_compatible
 class Array(models.Model):
 
-
-    ARRAY_DIMENSIONS = [
-        ('Array_2D','Array 2D'),
-        ('Array_3D', 'Array 3D'),
-    ]
-    ARRAY_TYPES = [
-        ('Image', 'Image'),
-        ('Map', 'Map'),
-        ('Spectrum', 'Spectrum'),
-
-#jacob's tables for data
-#    OBSERVATIONAL_TYPES = [
-#        ('Table Base', 'Table Base'),
-#        ('Table Binary','Table Binary'),
-#        ('Table Character','Table Character'),
-#        ('Table Delimited','Table Delimited'),
+    OBSERVATIONAL_TYPES = [
+        ('Table Base', 'Table Base'),
+        ('Table Binary','Table Binary'),
+        ('Table Character','Table Character'),
+        ('Table Delimited','Table Delimited'),
     ]
     product_observational = models.ForeignKey(Product_Observational, on_delete=models.CASCADE)
     name = models.CharField(max_length=MAX_CHAR_FIELD)
-
-    array_dimensions = models.CharField(max_length=MAX_CHAR_FIELD, choices=ARRAY_DIMENSIONS)
-    array_type = models.CharField(max_length=MAX_CHAR_FIELD, choices=ARRAY_TYPES)
-    local_identifier = models.CharField(max_length=MAX_CHAR_FIELD)
-    offset = models.CharField(max_length=MAX_CHAR_FIELD)
-    axes = models.CharField(max_length=MAX_CHAR_FIELD)
-    axis_index_order = models.CharField(max_length=MAX_CHAR_FIELD)
-    description = models.CharField(max_length=MAX_CHAR_FIELD)
-    # Has associations @ https://pds.nasa.gov/datastandards/documents/dd/v1/PDS4_PDS_DD_1A00.html#d5e3181
-
-
 
     # meta
     def __str__(self):
         return 'Array: {}'.format(self.name)
 
 
-    # fillers
 
-    def build_array(self, label_root):
-
-
-        # Find File_Area_Observational
-        File_Area_Observational = label_root.find('{}File_Area_Observational'.format(NAMESPACE))
-
-        # Add Array to File_Area_Observational given the dimension and type of the array.
-
-        if self.array_dimensions == 'Array_2D' and self.array_type == 'Image':
-            Array = etree.SubElement(File_Area_Observational, 'Array_2D_Image')
-        elif self.array_dimensions == 'Array_2D' and self.array_type == 'Map':
-            Array = etree.SubElement(File_Area_Observational, 'Array_2D_Map')
-        elif self.array_dimensions == 'Array_2D' and self.array_type == 'Spectrum':
-            Array = etree.SubElement(File_Area_Observational, 'Array_2D_Spectrum')
-        elif self.array_dimensions == 'Array_3D' and self.array_type == 'Image':
-            Array = etree.SubElement(File_Area_Observational, 'Array_3D_Image')
-        elif self.array_dimensions == 'Array_3D' and self.array_type == 'Map':
-            Array = etree.SubElement(File_Area_Observational, 'Array_3D_Map')
-        elif self.array_dimensions == 'Array_3D' and self.array_type == 'Spectrum':
-            Array = etree.SubElement(File_Area_Observational, 'Array_3D_Spectrum')
-
-
-        # Add Array information
-        if self.offset:
-            offset = etree.SubElement(Array, 'offset')
-            offset.text = self.offset
-        if self.axes:
-            axes = etree.SubElement(Array, 'axes')
-            axes.text = self.axes
-        if self.axis_index_order:
-            axis_index_order = etree.SubElement(Array, 'axis_index_order')
-            axis_index_order.text = self.axis_index_order
-        if self.description:
-            description = etree.SubElement(Array, 'description')
-            description.text = self.description
-
-
-        return label_root
-
-
-
-@python_2_unicode_compatible
-class DisplayDictionary(models.Model):
-    """
-    This dictionary describes how to display Array data on a display device
-The Color_Display_Settings class provides
-        guidance to data users on how to display a multi-banded Array
-        object on a color-capable display device.
-The Display_Direction class specifies how two of
-        the dimensions of an Array object should be displayed in the
-        vertical (line) and horizontal (sample) dimensions of a display
-        device.
-The Display_Settings class contains one or more
-        classes describing how data should be displayed on a display
-        device.
-The Movie_Display_Settings class provides
-        default values for the display of a multi-banded Array using a
-        software application capable of displaying video
-        content.
-    """
-    data = models.OneToOneField(Data, on_delete=models.CASCADE, primary_key=True,)
-
-    def __str__(self):
-        return "Display Dictionary"
-
-    def _write_schema_namespace(self):
-        """
-        write_schema_namespace
-        inputs:
-        outputs:
-        purpose:
-        """
 
 
 
@@ -3625,33 +3224,11 @@ The red_channel_band attribute identifies the
         by default, into the red channel of a display device. The first
         band along the band axis has band number 1.
     """
-#    color_display_axis = models.PositiveIntegerField() # max value 255
-    display_dictionary = models.OneToOneField(DisplayDictionary, on_delete=models.CASCADE)
-    color_display_axis = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # max value 255
+    color_display_axis = models.PositiveIntegerField() # max value 255
     comment_color_display = models.CharField(max_length=MAX_CHAR_FIELD)
-    red_channel_band = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # Big integer is better for
-    green_channel_band = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # pds4 specs for these
-    blue_channel_band = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # bands
-
-#    red_channel_band = models.PositiveIntegerField() # Big integer is better for
-#    green_channel_band = models.PositiveIntegerField() # pds4 specs for these
-#    blue_channel_band = models.PositiveIntegerField() # bands
+    red_channel_band = models.PositiveIntegerField() # Big integer is better for
+    green_channel_band = models.PositiveIntegerField() # pds4 specs for these
+    blue_channel_band = models.PositiveIntegerField() # bands
 
     #Color_Display_Settings
     def __str__(self):
@@ -3683,41 +3260,11 @@ The vertical_display_direction attribute
         that data along the vertical axis of an Array is supposed to be
         displayed.
     """
-    HORIZONTAL_DISPLAY_DIRECTION_CHOICES = [
-        ('left_to_right','Left to Right'),
-        ('right_to_left','Right to Left'),
-    ]
-    VERTICAL_DISPLAY_DIRECTION_CHOICES = [
-        ('bottom_to_top','Bottom to Top'),
-        ('top_to_bottom','Top to Bottom'),
-    ]
-    display_dictionary = models.OneToOneField(DisplayDictionary, on_delete=models.CASCADE)
     comment_display_direction = models.CharField(max_length=MAX_CHAR_FIELD)
-    horizontal_display_axis = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # max value 255
-
-    horizontal_display_direction = models.CharField(
-        max_length=13,
-        choices=HORIZONTAL_DISPLAY_DIRECTION_CHOICES,
-    )
-
-    vertical_display_axis = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # max value 255
-    vertical_display_direction = models.CharField(
-        max_length=13,
-        choices=HORIZONTAL_DISPLAY_DIRECTION_CHOICES,
-    )
-
-#    horizontal_display_axis = models.PositiveIntegerField() # max value 255
-#    horizontal_display_direction = models.PositiveIntegerField() # max value 255
-#    vertical_display_axis = models.PositiveIntegerField() # max value 255
-#    vertical_display_direction = models.PositiveIntegerField() # max value 255
+    horizontal_display_axis = models.PositiveIntegerField() # max value 255
+    horizontal_display_direction = models.PositiveIntegerField() # max value 255
+    vertical_display_axis = models.PositiveIntegerField() # max value 255
+    vertical_display_direction = models.PositiveIntegerField() # max value 255
 
     #Color_Display_Settings
     def __str__(self):
@@ -3768,7 +3315,6 @@ The time_display_axis attribute identifies, by
         the rate at which these bands are to be
         displayed.
     """
-"""
     time_display_axis = models.PositiveIntegerField() # max 255
     comment = models.CharField(max_length=MAX_CHAR_FIELD)
     frame_rate = models.FloatField() # min_value=1.0
@@ -3780,7 +3326,7 @@ The time_display_axis attribute identifies, by
     #Color_Display_Settings
     def __str__(self):
         return "How you actually make a dictionary >.<"
-"""
+
 @python_2_unicode_compatible
 class Movie_Display_Settings(models.Model):
     """
@@ -3815,48 +3361,20 @@ The time_display_axis attribute identifies, by
         the rate at which these bands are to be
         displayed.
     """
-#    time_display_axis = models.PositiveIntegerField() # max 255
-    LOOP_DELAY_UNIT_CHOICES = [
-        ('microseconds','microseconds'),
-        ('ms','milliseconds'),
-        ('s','seconds'),
-        ('min','minute'),
-        ('hr','hour'),
-        ('day','day'),
-        ('julian day','julian day'),
-        ('yr','year'),
-    ]
-    display_dictionary = models.OneToOneField(DisplayDictionary, on_delete=models.CASCADE)
-    time_display_axis = models.PositiveIntegerField(
-        validators=[
-            MaxValueValidator(255)
-        ]
-    ) # max 255
+    time_display_axis = models.PositiveIntegerField() # max 255
     comment = models.CharField(max_length=MAX_CHAR_FIELD)
-#    frame_rate = models.FloatField() # min_value=1.0
-    frame_rate = models.FloatField(
-        validators=[
-            MinValueValidator(1.0)
-        ]
-    ) # min_value=1.0
+    frame_rate = models.FloatField() # min_value=1.0
     loop_flag = models.BooleanField()
     loop_count = models.PositiveIntegerField()
-#    loop_delay = models.FloatField() # min_length=0.0
-    loop_delay = models.FloatField(
-        validators=[
-            MinValueValidator(0.0)
-        ]
-    ) # min_length=0.0
-    loop_delay_unit = models.CharField(
-        max_length = 20,
-        choices = LOOP_DELAY_UNIT_CHOICES,
-    )
+    loop_delay = models.FloatField() # min_length=0.0
     loop_back_and_forth_flag = models.BooleanField()
 
     #Color_Display_Settings
     def __str__(self):
         return "How you actually make a dictionary >.<"
 
+@python_2_unicode_compatible
+class DisplayDictionary(models.Model):
     """
     This dictionary describes how to display Array data on a display device
 
@@ -3877,10 +3395,6 @@ The Movie_Display_Settings class provides
 
 
     """
-"""
-@python_2_unicode_compatible
-class DisplayDictionary(models.Model):
-
     Color_Display_Settings = models.ForeignKey(Color_Display_Settings, on_delete=models.CASCADE)
     Display_Direction = models.ForeignKey(Display_Direction, on_delete=models.CASCADE)
     Display_Settings = models.ForeignKey(Display_Settings, on_delete=models.CASCADE)
@@ -3891,7 +3405,7 @@ class DisplayDictionary(models.Model):
     def __str__(self):
         return "How you actually make a dictionary >.<"
 
-"""
+
 
 
 

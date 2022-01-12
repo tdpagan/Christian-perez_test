@@ -120,30 +120,14 @@ def is_product_collection(xml_path):
 def open_label(label_path):
     parser = etree.XMLParser(remove_blank_text=False, remove_comments=False)
     tree = etree.parse(label_path, parser)
-    label_object = open(label_path, 'w')
     label_root = tree.getroot()
-    return [label_object, label_root]
+    return label_root
 
-# open_label opens an xml label given the path to the xml label and returns an open label object and a tree.
-def open_label_with_tree(label_path):
-    parser = etree.XMLParser(remove_blank_text=False, remove_comments=False)
-    tree = etree.parse(label_path, parser)
-    label_root = tree.getroot()
-    return [label_path, tree]
+
+
+
 
 # close_label closes an xml label given the label object and the root of the tree.
-def close_label(label_object, label_root):
-
-
-    print 'Label object: {}'.format(label_object)
-
-
-    tree = etree.tostring(label_root, pretty_print=True, encoding='utf-8', xml_declaration=True)
-    label_object.write(tree)
-    label_object.close()  
-
-# close_label closes an xml label given the label object and the root of the tree.
-"""
 def close_label(label_path, label_root):
     label_object = open(label_path, "r")
     lines = label_object.readlines()
@@ -152,7 +136,7 @@ def close_label(label_path, label_root):
     tree = etree.tostring(label_root, pretty_print=False, encoding="UTF-8", xml_declaration=False)
     label_object.write(lines[0]+lines[1]+tree)
     label_object.close() 
-"""
+
 
 
 
